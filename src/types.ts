@@ -54,6 +54,21 @@ export interface Bullet {
   maxAge?: number;
 }
 
+export interface BossLaser {
+  id: string;
+  x: number;
+  y: number;
+  angle: number;
+  angularVelocity: number;
+  length: number;
+  width: number;
+  maxDuration: number;
+  warningDuration: number;
+  duration: number;
+  color: string;
+  glowColor: string;
+}
+
 export interface Particle {
   x: number;
   y: number;

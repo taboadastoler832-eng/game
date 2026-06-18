@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { PlayerSkills, Bullet, Particle, FloatingText, Boss, GameState, MainWeaponType, SubWeaponType, PassiveCoreType } from '../types';
+import { PlayerSkills, Bullet, BossLaser, Particle, FloatingText, Boss, GameState, MainWeaponType, SubWeaponType, PassiveCoreType } from '../types';
 import { MusicAudio } from '../audio';
 import { Volume2, VolumeX, Shield, Play, RotateCcw, AlertTriangle, Zap, Target, Star, Radio } from 'lucide-react';
 
@@ -12,6 +12,36 @@ interface GameCanvasProps {
   skills: PlayerSkills;
   onExit: () => void;
 }
+
+const checkLaserCollision = (laser: BossLaser, px: number, py: number) => {
+  const ax = laser.x;
+  const ay = laser.y;
+  const bx = laser.x + Math.cos(laser.angle) * laser.length;
+  const by = laser.y + Math.sin(laser.angle) * laser.length;
+
+  const abx = bx - ax;
+  const aby = by - ay;
+  const abLenSq = abx * abx + aby * aby;
+
+  if (abLenSq === 0) {
+    const dx = px - ax;
+    const dy = py - ay;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  const apx = px - ax;
+  const apy = py - ay;
+
+  let t = (apx * abx + apy * aby) / abLenSq;
+  t = Math.max(0, Math.min(1, t));
+
+  const cx = ax + t * abx;
+  const cy = ay + t * aby;
+
+  const dx = px - cx;
+  const dy = py - cy;
+  return Math.sqrt(dx * dx + dy * dy);
+};
 
 export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -93,6 +123,7 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
 
   // Entities
   const bullets = useRef<Bullet[]>([]);
+  const bossLasers = useRef<BossLaser[]>([]);
   const particles = useRef<Particle[]>([]);
   const floatingTexts = useRef<FloatingText[]>([]);
   
@@ -213,6 +244,7 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
     playerX.current = 300;
     playerY.current = 650;
     bullets.current = [];
+    bossLasers.current = [];
     particles.current = [];
     floatingTexts.current = [];
     bombActiveDuration.current = 0;
@@ -510,6 +542,34 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
           });
         };
 
+const spawnBossLaser = (
+          x: number,
+          y: number,
+          angle: number,
+          angularVelocity: number,
+          length: number,
+          width: number,
+          maxDuration: number,
+          warningDuration: number,
+          color = '#ef4444',
+          glowColor = '#f43f5e'
+        ) => {
+          bossLasers.current.push({
+            id: Math.random().toString(),
+            x,
+            y,
+            angle,
+            angularVelocity,
+            length,
+            width,
+            maxDuration,
+            warningDuration,
+            duration: 0,
+            color,
+            glowColor,
+          });
+        };
+
         // PHASE 1: 星旋曼陀罗与分形花瓣 (Symphonic Nebula Spiral & Splitting Petals)
         // Option 1 & 2 Fusion: Alternating high-density spiral waves + periodic fission seeds + heavy beat rings
         if (b.phase === 1) {
@@ -551,6 +611,13 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
               spawnBossBullet(b.x, b.y, angle, 1.6, 'ring', '#eab308', '#ca8a04', 4.5);
             }
           }
+
+          // Twin cosmic sweeping lasers
+          if (patternStep === 110) {
+            const startAngle = Math.random() * Math.PI;
+            spawnBossLaser(b.x, b.y, startAngle, 0.007, 900, 15, 120, 40, '#a855f7', '#c084fc');
+            spawnBossLaser(b.x, b.y, startAngle + Math.PI, -0.007, 900, 15, 120, 40, '#c084fc', '#e9d5ff');
+          }
         }
 
         // PHASE 2: 极光共振矩阵与变频弯弦波 (Resonant Cross-Laser Warning & Sinuous Wave Interception)
@@ -585,6 +652,25 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
             }
           }
 
+          // Real Rotating Quad Cross Lasers matching visual sweep
+          if (patternStep === 100) {
+            const directions = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+            directions.forEach((dir) => {
+              spawnBossLaser(
+                b.x,
+                b.y,
+                b.laserAngle + dir,
+                0.0075,
+                900,
+                16,
+                130,
+                30,
+                '#38bdf8',
+                '#0284c7'
+              );
+            });
+          }
+
           // Expand & Brake (Temporal slow down) ring bursts on beats
           if (patternStep >= 130 && patternStep < 210) {
             if (b.patternTimer % 35 === 0) {
@@ -603,6 +689,47 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
         // Option 1 & 2 Fusion: Continuous suction warp + layered rainbow kaleidoscope rings + homing comets
         else {
           const patternStep = b.patternTimer % 300;
+
+          // Ultimate Rainbow Mandala Hex-Star Beams
+          if (patternStep === 0) {
+            const numRays = 6;
+            const startAngle = Math.random() * Math.PI;
+            for (let i = 0; i < numRays; i++) {
+              const angle = startAngle + (i * (Math.PI * 2) / numRays);
+              spawnBossLaser(
+                b.x,
+                b.y,
+                angle,
+                0.005, // slow clockwise crawl
+                900,
+                18,
+                200, // extremely grand presence!
+                45,  // 45 frames warning
+                '#f43f5e',
+                '#fda4af'
+              );
+            }
+          }
+
+          if (patternStep === 150) {
+            const numRays = 6;
+            const startAngle = Math.random() * Math.PI;
+            for (let i = 0; i < numRays; i++) {
+              const angle = startAngle + (i * (Math.PI * 2) / numRays);
+              spawnBossLaser(
+                b.x,
+                b.y,
+                angle,
+                -0.005, // counterclockwise crawl
+                900,
+                18,
+                200,
+                45,
+                '#eab308',
+                '#fef08a'
+              );
+            }
+          }
 
           // Ultimate Multi-Layered Rainbow Mandala Ring on heavy beats
           if (audioStats.isBeatKick) {
@@ -654,6 +781,68 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
 
       // 4. Update Bullet positions, behaviors and hitbox collisions
       let activeBullets = bullets.current;
+
+      // 4b. Update Boss Lasers and collision checks
+      bossLasers.current = bossLasers.current.filter((laser) => {
+        laser.duration++;
+        if (laser.duration > laser.maxDuration) {
+          return false;
+        }
+
+        // Attach laser source to boss center if close to boss center originally
+        const dxToBoss = Math.abs(laser.x - boss.current.x);
+        const dyToBoss = Math.abs(laser.y - boss.current.y);
+        if (dxToBoss < 120 && dyToBoss < 120) {
+          laser.x = boss.current.x;
+          laser.y = boss.current.y;
+        }
+
+        laser.angle += laser.angularVelocity;
+
+        // Active laser behavior
+        if (laser.duration > laser.warningDuration) {
+          // If an active bomb is purging, lasers are suppressed (do zero damage)
+          if (bombActiveDuration.current <= 0) {
+            const closestDist = checkLaserCollision(laser, playerX.current, playerY.current);
+
+            // True hitbox damage
+            if (closestDist <= playerRadius && !statsRef.current.isGameOver) {
+              if (playerInvulnFrames.current <= 0) {
+                statsRef.current.playerHp--;
+                playerInvulnFrames.current = 80;
+                MusicAudio.playPlayerHurt();
+                spawnExplosion(playerX.current, playerY.current, '#ef4444', 35, 4.5, true);
+                addFloatingText(playerX.current, playerY.current - 15, "LASER BLASTED!", "#f87171");
+
+                if (statsRef.current.playerHp <= 0) {
+                  statsRef.current.isGameOver = true;
+                  MusicAudio.playDefeat();
+                  addFloatingText(playerX.current, playerY.current, "COMBAT DEFEAT DETECTED", "#ef4444");
+                }
+              }
+            }
+
+            // Graze handling (throttled)
+            if (closestDist <= playerShipRadius && closestDist > playerRadius && !statsRef.current.isGameOver) {
+              if (localFrame % 8 === 0) {
+                statsRef.current.grazeCount++;
+                MusicAudio.playGraze();
+
+                let chargeAmount = 2.5;
+                if (skills.passive === PassiveCoreType.ABSORBER) {
+                  chargeAmount = 6.0;
+                }
+                statsRef.current.bombCharge = Math.min(100, statsRef.current.bombCharge + chargeAmount);
+                statsRef.current.score += 700;
+                addFloatingText(playerX.current, playerY.current - 10, "+GRAZE", "#67e8f9");
+                spawnExplosion(playerX.current, playerY.current, '#67e8f9', 3, 1, false);
+              }
+            }
+          }
+        }
+
+        return true;
+      });
 
       // Update Bomb shockwave boundaries
       if (bombActiveDuration.current > 0) {
@@ -897,6 +1086,7 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
             if (b.hp <= 0) {
               MusicAudio.playPhaseTransition();
               bullets.current = []; // purge screens
+              bossLasers.current = []; // purge active lasers
               spawnExplosion(b.x, b.y, '#818cf8', 50, 6, true);
 
               if (b.phase < 3) {
@@ -1248,6 +1438,84 @@ export default function GameCanvas({ skills, onExit }: GameCanvasProps) {
         }
         ctx.restore();
       }
+
+      // F2. Render Boss Lasers
+      bossLasers.current.forEach((laser) => {
+        ctx.save();
+        const ax = laser.x;
+        const ay = laser.y;
+        const bx = laser.x + Math.cos(laser.angle) * laser.length;
+        const by = laser.y + Math.sin(laser.angle) * laser.length;
+
+        if (laser.duration <= laser.warningDuration) {
+          // A. Laser Warning Phase
+          const remainingPct = 1 - (laser.duration / laser.warningDuration);
+          const flash = Math.sin(localFrame * 0.3) * 0.4 + 0.6; // heavy hot pulsating
+
+          // Faint fill warning corridor so player knows width
+          ctx.strokeStyle = laser.glowColor;
+          ctx.globalAlpha = 0.06 * remainingPct;
+          ctx.lineWidth = laser.width;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+
+          // High contrast razor-thin dotted guide line
+          ctx.strokeStyle = '#ef4444';
+          ctx.globalAlpha = 0.5 * flash;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([10, 8]);
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+          ctx.setLineDash([]); // reset dash patterns
+        } else {
+          // B. Laser Active High-Energy Phase
+          // Crackling dynamic size fluctuation for electric power feeling!
+          const crackle = Math.sin(localFrame * 0.5 + laser.duration) * 3;
+          const currentWidth = Math.max(4, laser.width + crackle);
+
+          // Phase-out fade before ending
+          const fadeFrames = 15;
+          let alpha = 1.0;
+          if (laser.maxDuration - laser.duration < fadeFrames) {
+            alpha = (laser.maxDuration - laser.duration) / fadeFrames;
+          }
+
+          ctx.globalAlpha = alpha;
+          ctx.lineCap = 'round';
+
+          // Outer glowing aura
+          ctx.shadowBlur = 18;
+          ctx.shadowColor = laser.glowColor;
+          ctx.strokeStyle = laser.glowColor;
+          ctx.lineWidth = currentWidth;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+
+          // Mid-energy core
+          ctx.strokeStyle = laser.color;
+          ctx.lineWidth = currentWidth * 0.6;
+          ctx.shadowBlur = 0; // turn off shadow blur for faster rendering on lower cores
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+
+          // Ultra white super-hot center core
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = currentWidth * 0.25;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
 
       // G. Render All Active Projectiles
       bullets.current.forEach((b) => {
