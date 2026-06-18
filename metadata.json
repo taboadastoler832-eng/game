@@ -1,0 +1,6 @@
+{
+  "name": "Rhythmic Danmaku Shmup",
+  "description": "一款拥有华丽音乐节奏弹幕与多合一子弹技能组合的顶级弹幕射击游戏（带有 procedural 音乐合成与发光律动光影效果）。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
